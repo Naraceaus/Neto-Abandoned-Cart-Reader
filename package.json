@@ -1,0 +1,22 @@
+{
+  "name": "neto-ac-analysis",
+  "version": "1.0.0",
+  "description": "Retrieve Abandoned Cart sessions from a site",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "Neto",
+    "abandoned",
+    "cart"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^2.0.0",
+    "neto-api": "",
+    "json2csv": "",
+    "opn": ""
+  }
+}

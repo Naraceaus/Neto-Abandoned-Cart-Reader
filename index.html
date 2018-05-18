@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+		<title>Hello World!</title>
+	</head>
+	<body>
+		<h1>Neto Abandoned Cart Reader</h1>
+
+		<div id="abandoned-carts" class="container-fluid">
+			<div class="row filter">
+				<div class="col-3">
+					<div class="form-group row">
+						<label for="store_url" class="col-3 col-form-label">Store: </label>
+						<div class="col-9">
+							<input class="form-control" id="store_url" v-model="store_domain" placeholder="mystore.neto.com.au">
+						</div>
+					</div>
+				</div>
+				<div class="col-3">
+					<div class="form-group row">
+						<label for="api_key" class="col-4 col-form-label">API Key: </label>
+						<div class="col-8">
+							<input type="password" class="form-control" id="api_key" v-model="api_key">
+						</div>
+					</div>
+				</div>
+				<div class="col-3">
+					<div class="form-group row">
+						<label for="pass_key" class="col-4 col-form-label">Pass Key: </label>
+						<div class="col-8">
+							<input type="password" class="form-control" id="pass_key" v-model="pass_key">
+
+						</div>
+						<div class="col-12">
+							<small id="pass_key_instructions" class="form-text text-muted">
+								Please enter key phrase to save or load credentials.
+							</small>
+						</div>
+					</div>
+				</div>
+				<div class="col-3">
+					<div class="form-group row">
+						<div class="col-6">
+							<button class="btn btn-block" id='save_credentials' v-on:click="saveCredentials">Save Login</button>
+						</div>
+						<div class="col-6">
+							<button class="btn btn-block" id='load_credentials' v-on:click="loadCredentials">Load Login</button>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+			<hr>
+			<div class="row filter">
+				<div class="col-2">
+					<div class="row form-group">
+					
+						<div class="col-12">
+							Status:
+						</div>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" v-model="cart_status" id="open_status" value="Open" checked>
+								<label class="form-check-label" > Open</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" v-model="cart_status" id="close_status" value="Closed">
+								<label class="form-check-label" > Closed</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" v-model="cart_status" id="abandon_status" value="Abandoned">
+								<label class="form-check-label" > Abandoned</label>
+							</div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="col-4">
+					<div class="form-group row">
+						<label for="date_created_from" class="col-5 col-form-label">Date Created From: </label>
+						<div class="col-7">
+							<input class="form-control" id="date_created_from" v-model="date_created_from" type="date">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="date_created_to" class="col-5 col-form-label">Date Created To: </label>
+						<div class="col-7">
+							<input class="form-control" id="date_created_to" v-model="date_created_to" type="date">
+						</div>
+					</div>
+				</div>
+				<div class="col-4">
+					<div class="form-group row">
+						<label for="date_updated_from" class="col-5 col-form-label">Date Updated From: </label>
+						<div class="col-7">
+							<input class="form-control" id="date_updated_from" v-model="date_updated_from" type="date">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="date_updated_to" class="col-5 col-form-label">Date Updated To: </label>
+						<div class="col-7">
+							<input class="form-control" id="date_updated_to" v-model="date_updated_to" type="date">
+						</div>
+					</div>
+				</div>
+				<div class="col-2">
+					<div class="form-group row">
+						<label for="limit" class="col-4 col-form-label">Limit: </label>
+						<div class="col-8">
+							<input class="form-control" id="limit" v-model="limit" type="number" max=250>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="page" class="col-4 col-form-label">Page: </label>
+						<div class="col-8">
+							<input class="form-control" id="page" v-model="page" type="number">
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<hr>
+			<div class="row filter">
+			
+
+
+				<div class="col-2">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" v-model="is_UTC" id="is_UTC" value="true" checked>
+						<label class="form-check-label" for="is_UTC">Use UTC Time</label>					
+					</div>
+				</div>
+				<div class="col-5">
+					<button class="btn btn-block" name='refresh_cart_data' v-on:click="retrieveCartData" v-bind:disabled="refresh_status == 'Loading'">{{refresh_status}}</button>
+				</div>
+				<div class="col-5">
+					<button class="btn btn-block" name='export_cart_data' v-on:click="exportToCSV" v-bind:disabled="refresh_status != 'Refresh'">Write To File</button>
+				</div>
+			</div>
+			<hr>
+			<div class="row">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th>Cart ID</th>
+							<th>Status</th>
+							<th>Date Created</th>
+							<th>Date Updated</th>
+							<th>Customer</th>
+							<th>Address</th>
+							<th>Order ID Created</th>
+							<th>Customer Notified</th>
+							<th>Cart Processed</th>
+						</tr>
+					</thead>
+					<tbody v-for="cart in carts">
+						<tr class="table-light">
+							<td><a href="javascript:void(0);" v-on:click="loadCart(cart.RestoreCartUrl)">{{cart.CartID}}</a></td>
+							<td>{{cart.CheckoutStatus}}</td>
+							<td>{{getDateTimeResult(cart,'DateCreated')}}</td>
+							<td>{{getDateTimeResult(cart,'DateUpdated')}}</td>
+							<td>
+								<div>Email: {{cart.CustomerEmail}}</div>
+								<div>Username: {{cart.CustomerUsername}}</div>
+							</td>
+							<td>
+								<div>Billing Address: {{cart.BillingAddress.StreetLine1+", "+cart.BillingAddress.City+", "+cart.BillingAddress.PostCode+", "+cart.BillingAddress.Country}}
+								</div>
+								<div>Shipping Address: {{cart.ShippingAddress.StreetLine1+", "+cart.ShippingAddress.City+", "+cart.ShippingAddress.PostCode+", "+cart.ShippingAddress.Country}}
+								</div>
+							</td>
+							<td>{{cart.OrderID}}</td>
+							<td>{{cart.NotifiedCustomer}}</td>
+							<td>{{cart.IsProcessed}}</td>
+						</tr>
+						<tr v-for="(orderline, index) in cart.OrderLines">
+							<td v-if="index == 0" v-bind:rowspan="cart.OrderLines.length" colspan="3" class="table-light">
+								Cart Total: ${{cart.CartTotal}}
+							</td>
+							<td colspan="7" class="table-dark">
+								<div class="row">
+									<div class="col-4">
+										{{orderline.SKU}}
+									</div>
+									<div class="col-4">
+										{{orderline.ProductName}}
+									</div>
+									<div class="col-4">
+										{{orderline.Quantity+" x "+orderline.UnitPrice+" = "+orderline.LinePrice}}
+									</div>
+									
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			
+		</div>
+
+	</body>
+	<footer>
+		
+		<style>
+			.filter>div{
+				border-style: solid;
+				border-width: 0px 1px 0px 0px;
+				border-color: rgba(0,0,0,.1);
+			}
+			.filter>div:last-child {
+				border-width: 0px;
+			}
+			table {
+				font-size: .8rem;
+			}
+		</style>
+		<script src="./moment-with-locales.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+		<script>
+			const Json2csvParser = require('json2csv').Parser;
+			const { NetoAPI } = require('neto-api');
+			const opn = require('opn');
+			const crypto = require('crypto');
+			var algorithm = 'aes-256-ctr';
+			var fs = require('fs');
+			var abandoned_carts = new Vue({
+				el: '#abandoned-carts',
+				data: {
+					store_domain:"",
+					api_key:"",
+					pass_key:"",
+					carts:[],
+					cart_status:[],
+					date_created_from:"",
+					date_created_to:"",
+					date_updated_from:"",
+					date_updated_to:"",
+					limit:"25",
+					page:"0",
+					is_UTC:true,
+					refresh_status:'Load Data'
+				},
+				computed: {
+					filter: function() {
+
+						return filter_obj;
+					}
+				},
+				methods: {
+					retrieveCartData: function() {
+						var ab_this = this;
+						var date_filters = ['date_created_from','date_created_to','date_updated_from','date_updated_to'];
+						var date_filter_names = ['']
+						var filter_obj = {
+							"CheckoutStatus":this.cart_status.join(","),
+							"Page":this.page,
+							"Limit":this.limit,
+							"OutputSelector":[
+								"CartID",
+								"CheckoutStatus",
+								"DateCreated",
+								"DateUpdated",
+								"DateCreatedUTC",
+								"DateUpdatedUTC",
+								"CustomerEmail",
+								"RestoreCartUrl",
+								"CustomerUsername",
+								"BillingAddress",
+								"ShippingAddress",
+								"OrderID",
+								"NotifiedCustomer",
+								"IsProcessed",
+								"OrderLines",
+								"CartTotal",
+								"CloseReason"
+							]
+						};
+						
+						date_filters.forEach (function(item, index) {
+							console.log('check ',item, ab_this[item]);
+							if (ab_this[item].length > 0) {
+								var api_name = item.replace(/^[a-z]|_[a-z]/g, function(letters) {
+									return letters.toUpperCase();
+								})
+								.replace(/_/g, '');
+								
+								filter_obj[api_name] = ab_this.getDateTimeFilter(item);
+							}
+						});
+						//API requires at least date created from be specified. So if it is not specified set it to 1980
+						if (filter_obj.DateCreatedFrom == null) {
+							filter_obj.DateCreatedFrom = moment('1970-01-01').format('YYYY-MM-DD HH:mm:ss')
+						}
+						if (this.store_domain.length > 0 && this.api_key.length > 0) {
+
+							var my_site = new NetoAPI({
+								url: this.store_domain,
+								key: this.api_key,
+							});
+							console.log('sending');
+							console.log(filter_obj);
+							this.refresh_status = "Loading";
+							my_site.cart.get(filter_obj)
+							.exec()
+							.then((res)=> {
+								console.log('made request');
+								console.log(res);
+								ab_this.carts = res.Cart;
+								ab_this.refresh_status = "Refresh";
+							})
+						} else {
+							alert('Please supply domain and api key.');
+						}
+						
+					},
+					getDateTimeFilter: function(key) {
+						console.log('get time filter for ',key);
+						console.log(this)
+						if (this[key].length > 0) {
+							var date = new moment(this[key]);
+							if (this.is_UTC) {
+								return date.format("YYYY-MM-DD HH:mm:ss"); 
+							} else {
+								return date.utc().format("YYYY-MM-DD HH:mm:ss");
+							}						
+						} else {
+							return "";
+						}
+
+					},
+					getDateTimeResult: function(cart,time_key) {
+						if (this.is_UTC) {
+							time_key+="UTC";
+						}
+						return(cart[time_key]);
+					},
+					loadCart: function(url) {
+						console.log(url);
+						opn(url);
+					},
+					exportToCSV: function() {
+					
+					
+					/*const fields = ['carModel', 'price', 'colors'];
+					const myCars = [
+					  {
+						"carModel": "Audi",
+						"price": 0,
+						"colors": ["blue","green","yellow"]
+					  }, {
+						"carModel": "BMW",
+						"price": 15000,
+						"colors": ["red","blue"]
+					  }, {
+						"carModel": "Mercedes",
+						"price": 20000,
+						"colors": "yellow"
+					  }, {
+						"carModel": "Porsche",
+						"price": 30000,
+						"colors": ["green","teal","aqua"]
+					  }
+					];
+					 */
+					 var fields = [
+							"CartID",
+							"CheckoutStatus",
+							"DateCreated",
+							"DateUpdated",
+							"DateCreatedUTC",
+							"DateUpdatedUTC",
+							"CustomerEmail",
+							"RestoreCartUrl",
+							"CustomerUsername",
+							"NotifiedCustomer",
+							"IsProcessed",
+							﻿"BillingAddress.FirstName",
+							"BillingAddress.LastName",
+							"BillingAddress.Company",
+							"BillingAddress.StreetLine1",
+							"BillingAddress.StreetLine2",
+							"BillingAddress.City",
+							"BillingAddress.Country",
+							"BillingAddress.State",
+							"BillingAddress.PostCode",
+							"BillingAddress.Phone",
+							"BillingAddress.Fax",
+							﻿"ShippingAddress.FirstName",
+							"ShippingAddress.LastName",
+							"ShippingAddress.Company",
+							"ShippingAddress.StreetLine1",
+							"ShippingAddress.StreetLine2",
+							"ShippingAddress.City",
+							"ShippingAddress.Country",
+							"ShippingAddress.State",
+							"ShippingAddress.PostCode",
+							"ShippingAddress.Phone",
+							"ShippingAddress.Fax",
+							﻿"OrderLines.ProductID",
+							"OrderLines.SKU",
+							"OrderLines.Quantity",
+							"OrderLines.ProductName",
+							"OrderLines.UnitPrice",
+							"OrderLines.LinePrice",
+							﻿"CartTotal",
+							"OrderID"
+						];
+						const json2csvParser = new Json2csvParser({fields, unwind:['OrderLines', 'BillingAddress', 'ShippingAddress']});//{ fields, unwind: 'colors' });
+						const csv = json2csvParser.parse(this.carts);
+					
+					
+						fs.writeFile("./abandoned_cart_resutls.csv", csv, function(err) {
+							if(err) {
+								alert('Error creating file.');
+								console.log(err);
+							} else {
+								alert("The file abandoned_cart_resutls.csv was saved!");
+							}
+
+						}); 
+
+					},
+					saveCredentials: function() {
+						console.log('saving credentials');
+						ab_this =this;
+						var save_creds = {
+							'store_domain':this.store_domain,
+							'api_key':this.api_key
+						};
+						var save_text = JSON.stringify(save_creds);
+						if (this.pass_key.length >= 4) {
+						
+							var cipher = crypto.createCipher(algorithm,this.pass_key)
+							var save_text = cipher.update(save_text,'utf8','hex')
+							save_text += cipher.final('hex');
+						
+							fs.writeFile("./store_credentials", save_text, function(err) {
+								if(err) {
+									return console.log(err);
+									alert("Error saving credentials.");
+								} else {
+									alert("Credentials saved.");							
+								}
+								ab_this.pass_key ="";
+							}); 
+						} else {
+							alert('Pass key requires a minimum of 4 characters');
+						}	
+					},
+					loadCredentials: function() {
+						console.log('loading credentials');
+						ab_this =this;
+						if (this.pass_key.length >= 4) {
+							fs.readFile("./store_credentials", 'utf8', function(err, data) {
+								if(err) {
+									return console.log(err);
+									alert("Error loading credentials.");
+								} else {
+									var decipher = crypto.createDecipher(algorithm,ab_this.pass_key)
+									var loaded_text = decipher.update(data,'hex','utf8')
+									loaded_text += decipher.final('utf8');
+									var loaded_creds;
+									try {
+										loaded_creds = JSON.parse(loaded_text);
+									} catch (err) {
+										alert("Invalid credentials.");
+									}
+									if (loaded_creds != null) {
+										ab_this.store_domain = loaded_creds.store_domain;
+										ab_this.api_key = loaded_creds.api_key;
+										alert("Credentials loaded.");									
+									}
+
+								}
+								
+								ab_this.pass_key = "";
+								
+							}); 
+						} else {
+							alert('Pass key requires a minimum of 4 characters');
+						}
+					}
+				}
+			});
+			
+			
+		</script>
+	</footer>
+</html>
